@@ -42,9 +42,15 @@ def find_most_similar(target, stock_pool, latest_date=None, win_size = 15, calc_
         smilarity_res[stk_code] = stk[calc_col].rolling(win_size).apply(
             partial(person_dis, target[calc_col].values[0:win_size]))
     tops = get_topk(smilarity_res, top_num=top_num)
-    most_similar = []
+    traget_code = target.code.values[0]
+    most_similar = {traget_code: []}
     for code, dt, simi in tops:
-        most_similar.append((simi, stock_pool[code][:dt][-win_size:],))
+        most_similar[traget_code].append({
+            'code': code,
+            'similarity': simi,
+            'end_date': dt
+        })
+        #most_similar[traget_code].append((simi, stock_pool[code][:dt][-win_size:],))
     return most_similar
 
 
@@ -56,3 +62,10 @@ def get_topk(smilarities, top_num=10):
     topN.sort(key=lambda x:x[2], reverse=True)
     return topN[:top_num]
 
+import dask
+dfs = data_loader()
+parallized_fms = dask.delayed(find_most_similar)
+to_calc = ['000002','600362','002024','601601']
+results = dask.compute(
+    [parallized_fms(dfs[code], dfs) for code in to_calc],
+    scheduler='multiprocessing')
