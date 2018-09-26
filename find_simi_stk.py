@@ -69,3 +69,11 @@ to_calc = ['000002','600362','002024','601601']
 results = dask.compute(
     [parallized_fms(dfs[code], dfs) for code in to_calc],
     scheduler='multiprocessing')
+
+dfs = []
+for l in results[0]:
+    for c,r in l.items():
+        df = pd.DataFrame(r)
+        df['target'] = c
+        dfs.append(df)
+df = pd.concat(dfs)
